@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "start": "tsx server.ts",
+    "build": "npm --prefix ../frontend run build && node scripts/copy-frontend-dist.mjs",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:init": "tsx scripts/init-db.ts"
