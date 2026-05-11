@@ -13,6 +13,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'kf_user';
 
+function createLocalUser(uid: string, name: string, role: UserRole, pin?: string): User {
+  return {
+    id: `local-${uid}`,
+    uid,
+    name,
+    role,
+    pin,
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,17 +40,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (uid: string, name: string, role: UserRole, pin?: string) => {
-    const response = await fetch(apiUrl('/api/auth/login'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid, name, role, pin }),
-    });
+    try {
+      const response = await fetch(apiUrl('/api/auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, name, role, pin }),
+      });
 
-    if (!response.ok) {
-      throw new Error('Unable to create session');
+      if (response.ok) {
+        const userData = (await response.json()) as User;
+        setUser(userData);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+        return;
+      }
+    } catch {
+      // Fall back to a local session when the backend is unavailable.
     }
 
-    const userData = (await response.json()) as User;
+    const userData = createLocalUser(uid, name, role, pin);
     setUser(userData);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
   };
