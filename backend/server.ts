@@ -29,10 +29,10 @@ function makeTableNo() {
   return `T-${Math.floor(1 + Math.random() * 24)}`;
 }
 
-async function seedData() {
+async function seedStationsIfNeeded() {
   const stationCount = await prisma.kitchenStation.count();
   if (stationCount > 0) {
-    return;
+    return prisma.kitchenStation.findMany({ orderBy: [{ sort_order: "asc" }, { station_name: "asc" }] });
   }
 
   const admin = await prisma.user.create({
@@ -43,60 +43,96 @@ async function seedData() {
     data: { uid: "demo-chef", name: "Demo Chef", role: "chef", pin: "2468" },
   });
 
-  const fryStation = await prisma.kitchenStation.create({
-    data: {
-      station_name: "Fry",
-      display_name: "Fry Station",
-      station_code: "FRY-01",
-      color_code: "#f97316",
-      expected_time_minutes: 8,
-      icon: "Flame",
-    },
-  });
-
-  const grillStation = await prisma.kitchenStation.create({
-    data: {
-      station_name: "Grill",
-      display_name: "Grill & Roast",
-      station_code: "GRL-01",
-      color_code: "#ef4444",
-      expected_time_minutes: 15,
-      icon: "Beef",
-    },
-  });
-
-  const coldStation = await prisma.kitchenStation.create({
-    data: {
-      station_name: "Cold",
-      display_name: "Salad & Cold Station",
-      station_code: "CLD-01",
-      color_code: "#22c55e",
-      expected_time_minutes: 5,
-      icon: "Leaf",
-    },
-  });
-
-  await prisma.menuItem.createMany({
+  await prisma.kitchenStation.createMany({
     data: [
-      { name: "French Fries", category: "Appetizers", price: 4.99, station_id: fryStation.station_id, prep_time_minutes: 6 },
-      { name: "Burger", category: "Mains", price: 12.99, station_id: grillStation.station_id, prep_time_minutes: 12 },
-      { name: "Caesar Salad", category: "Salads", price: 9.99, station_id: coldStation.station_id, prep_time_minutes: 5 },
-      { name: "Fried Chicken", category: "Mains", price: 14.99, station_id: fryStation.station_id, prep_time_minutes: 15 },
-      { name: "Steak", category: "Mains", price: 24.99, station_id: grillStation.station_id, prep_time_minutes: 20 },
+      {
+        station_name: "Fry",
+        display_name: "Fry Station",
+        station_code: "FRY-01",
+        color_code: "#f97316",
+        expected_time_minutes: 8,
+        icon: "Flame",
+        sort_order: 1,
+      },
+      {
+        station_name: "Grill",
+        display_name: "Grill & Roast",
+        station_code: "GRL-01",
+        color_code: "#ef4444",
+        expected_time_minutes: 15,
+        icon: "Beef",
+        sort_order: 2,
+      },
+      {
+        station_name: "Cold",
+        display_name: "Salad & Cold Station",
+        station_code: "CLD-01",
+        color_code: "#22c55e",
+        expected_time_minutes: 5,
+        icon: "Leaf",
+        sort_order: 3,
+      },
     ],
   });
 
-  await prisma.chefStationMapping.create({
-    data: {
-      chef_id: chef.id,
-      station_id: fryStation.station_id,
-      is_primary: true,
-      status: "online",
-      last_seen_at: new Date(),
-    },
+  const stations = await prisma.kitchenStation.findMany({
+    orderBy: [{ sort_order: "asc" }, { station_name: "asc" }],
   });
 
+  const fryStation = stations.find((station) => station.station_name.toLowerCase().includes("fry")) ?? stations[0];
+  if (fryStation) {
+    await prisma.chefStationMapping.create({
+      data: {
+        chef_id: chef.id,
+        station_id: fryStation.station_id,
+        is_primary: true,
+        status: "online",
+        last_seen_at: new Date(),
+      },
+    });
+  }
+
   console.log(`Seeded demo users: ${admin.name}, ${chef.name}`);
+  return stations;
+}
+
+async function seedMenuItemsIfNeeded(stations: Awaited<ReturnType<typeof prisma.kitchenStation.findMany>>) {
+  const menuCount = await prisma.menuItem.count();
+  if (menuCount > 0) {
+    return;
+  }
+
+  const stationMap = new Map(stations.map((station) => [station.station_name.toLowerCase(), station]));
+  const fallbackStation = stations[0];
+  const fryStation = stationMap.get("fry") ?? fallbackStation;
+  const grillStation = stationMap.get("grill") ?? fallbackStation;
+  const coldStation = stationMap.get("cold") ?? fallbackStation;
+
+  if (!fallbackStation) {
+    return;
+  }
+
+  await prisma.menuItem.createMany({
+    data: [
+      { name: "French Fries", category: "Appetizers", price: 4.99, station_id: fryStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 6 },
+      { name: "Cheeseburger", category: "Mains", price: 12.99, station_id: grillStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 12 },
+      { name: "Chicken Nuggets", category: "Starters", price: 7.49, station_id: fryStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 8 },
+      { name: "Caesar Salad", category: "Salads", price: 9.99, station_id: coldStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 5 },
+      { name: "Grilled Steak", category: "Mains", price: 24.99, station_id: grillStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 20 },
+      { name: "Club Sandwich", category: "Sandwiches", price: 10.49, station_id: grillStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 10 },
+      { name: "Mozzarella Sticks", category: "Appetizers", price: 6.99, station_id: fryStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 7 },
+      { name: "Iced Lemon Tea", category: "Drinks", price: 3.49, station_id: coldStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 2 },
+      { name: "Margherita Pizza Slice", category: "Mains", price: 8.99, station_id: grillStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 14 },
+      { name: "Chocolate Cake", category: "Desserts", price: 5.99, station_id: coldStation?.station_id ?? fallbackStation.station_id, prep_time_minutes: 4 },
+    ],
+  });
+
+  console.log("Seeded demo menu items");
+}
+
+async function seedData() {
+  const stations = await seedStationsIfNeeded();
+  await seedMenuItemsIfNeeded(stations);
 }
 
 async function getStationOverview() {
