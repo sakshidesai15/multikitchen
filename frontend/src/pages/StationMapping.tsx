@@ -73,11 +73,11 @@ export default function StationMapping() {
   if (loading) return <div className="p-8 text-slate-500 font-mono">Loading Mapping Data...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight">Routing Terminal</h2>
-          <p className="text-slate-500 text-sm font-medium">Link infrastructure nodes to processing units</p>
+          <h2 className="page-title text-2xl md:text-3xl">Station mapping</h2>
+          <p className="page-subtitle">Assign menu items to the correct kitchen station.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -133,7 +133,7 @@ export default function StationMapping() {
                   <div className="text-sm font-black text-white uppercase tracking-tight">{item.name}</div>
                   <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.category}</div>
                 </td>
-                <td className="px-6 py-4 font-mono text-slate-500 text-xs tracking-tighter">NODE-0{item.id.slice(0,2)}</td>
+                <td className="px-6 py-4 font-mono text-slate-500 text-xs tracking-tighter">ITEM-{item.id.slice(0, 4).toUpperCase()}</td>
                 <td className="px-6 py-4">
                   {item.station ? (
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
@@ -142,7 +142,7 @@ export default function StationMapping() {
                     </div>
                   ) : (
                     <div className="flex flex-col gap-1">
-                      <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest italic tracking-[0.2em]">Unassigned</span>
+                      <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.2em] italic">Unassigned</span>
                       {item.name.toLowerCase().includes('fried') && (
                         <div className="text-[8px] font-bold text-orange-500 uppercase tracking-tighter animate-pulse">
                           Suggestion: FRY STATION
@@ -162,8 +162,8 @@ export default function StationMapping() {
            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-6">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h3 className="text-lg font-black text-white uppercase tracking-tight">Assign Location</h3>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Set terminal for {selectedIds.length} items</p>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tight">Assign station</h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Apply to {selectedIds.length} selected items</p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-800 rounded-full text-slate-500">
                   <X className="w-6 h-6" />

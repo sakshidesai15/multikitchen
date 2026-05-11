@@ -25,8 +25,11 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-zinc-950">
-        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen bg-[#07080D]">
+        <div className="flex items-center gap-3 text-slate-300">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold uppercase tracking-[0.25em]">Loading KitchenFlow</span>
+        </div>
       </div>
     );
   }
@@ -49,7 +52,7 @@ function AppContent() {
   const toggleKdsMode = () => setIsKdsMode(!isKdsMode);
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div className="flex h-screen bg-[#07080D] text-zinc-100 overflow-hidden">
       {!isKdsMode && (
         <div className="hidden md:block">
           <Sidebar currentView={currentView} onViewChange={setCurrentView} />
@@ -60,7 +63,7 @@ function AppContent() {
         <main className={cn(
           "flex-1 overflow-y-auto min-h-0",
           isKdsMode ? "p-0" : "p-4 md:p-6 lg:p-8",
-          !isKdsMode && "pb-20 md:pb-8" // Add space for bottom nav on mobile
+          !isKdsMode && "pb-20 md:pb-8"
         )}>
           {isKdsMode && (
             <button 

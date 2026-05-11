@@ -82,9 +82,15 @@ export default function ChefView() {
   if (loading) return <div className="p-8 text-slate-500 font-mono">Loading Terminal...</div>;
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
-      {/* Station Selector Bar */}
-      <div className="flex overflow-x-auto bg-slate-900 border-b border-slate-800 p-2 gap-2 no-scrollbar">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="page-title text-2xl md:text-3xl">Chef queue</h2>
+          <p className="page-subtitle">Focus on the active station and work orders in sequence.</p>
+        </div>
+      </div>
+
+      <div className="flex overflow-x-auto bg-slate-900/70 border border-slate-800 rounded-2xl p-2 gap-2 no-scrollbar">
         {stations.map(s => (
           <button
             key={s.station_id}
@@ -104,9 +110,10 @@ export default function ChefView() {
       {/* Main Grid View */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {stationItems.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-600 opacity-50">
+          <div className="empty-state">
             <ShoppingBag className="w-16 h-16 mb-4" />
-            <p className="text-sm font-bold uppercase tracking-[0.3em]">Queue Empty</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em]">No active items</p>
+            <p className="text-[10px] uppercase tracking-[0.28em] mt-2">Switch stations or create a new order to begin.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -117,7 +124,7 @@ export default function ChefView() {
                 <div 
                   key={item.id} 
                   className={cn(
-                    "android-card flex flex-col transition-all",
+                    "panel flex flex-col transition-all",
                     isDelayed ? "border-red-500/50 bg-red-500/5" : "border-slate-800/50"
                   )}
                 >
@@ -200,7 +207,7 @@ export default function ChefView() {
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-3 h-3" />
-            <span>Shift: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - End</span>
+            <span>Shift: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         </div>
         <div>

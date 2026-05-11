@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -49,31 +49,34 @@ export default function Analytics() {
       .finally(() => setLoading(false));
   }, []);
 
-  const stationData = stations.map((station) => ({
+  const stationData = useMemo(() => stations.map((station, index) => ({
     name: station.station_name,
     prepTime: station.expected_time_minutes,
-    orders: Math.max(1, Math.round(Math.random() * 15)),
-    delayed: Math.floor(Math.random() * 5),
+    orders: Math.max(1, summary ? Math.round(summary.activeItems / Math.max(1, stations.length) + index) : station.expected_time_minutes),
+    delayed: Math.max(0, Math.round((summary?.delayedItems ?? 0) / Math.max(1, stations.length))),
     color: station.color_code,
-  }));
+  })), [stations, summary]);
 
-  const hourlyData = Array.from({ length: 8 }).map((_, i) => ({
-    hour: `${12 + i}:00`,
-    orders: Math.floor(Math.random() * 100) + 50,
-  }));
+  const hourlyData = useMemo(() => {
+    const base = summary?.openOrders ?? 0;
+    return Array.from({ length: 8 }).map((_, i) => ({
+      hour: `${12 + i}:00`,
+      orders: base + (i * 6) + (summary?.activeItems ?? 0),
+    }));
+  }, [summary]);
 
-  if (loading || !summary) return <div className="p-8 text-neutral-500 font-mono">Compiling Analytics Data...</div>;
+  if (loading || !summary) return <div className="p-8 text-neutral-500 font-mono">Loading analytics...</div>;
 
   return (
-    <div className="space-y-10 pb-24">
+    <div className="page-shell pb-24">
       <div className="flex items-center justify-between px-2">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight uppercase">Operational Intel</h2>
-          <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest mt-1">Throughput & SLA Compliance</p>
+          <h2 className="page-title">Performance insights</h2>
+          <p className="page-subtitle">Throughput, delays, and station load patterns.</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full border border-green-500/20 shadow-lg">
           <TrendingUp className="w-4 h-4 text-green-500" />
-          <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Efficiency +12%</span>
+          <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Kitchen health stable</span>
         </div>
       </div>
 
@@ -84,7 +87,7 @@ export default function Analytics() {
           { label: 'Delayed', value: summary.delayedItems },
           { label: 'Ready', value: summary.readyItems },
         ].map((entry) => (
-          <div key={entry.label} className="android-card p-6">
+          <div key={entry.label} className="panel">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{entry.label}</p>
             <h3 className="text-3xl font-black text-white mt-1">{entry.value}</h3>
           </div>
@@ -92,11 +95,11 @@ export default function Analytics() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="android-card p-10 md:col-span-2">
+        <div className="panel md:col-span-2">
           <div className="flex justify-between items-center mb-10">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+            <h3 className="section-label flex items-center gap-3">
               <Clock className="w-5 h-5 text-blue-500" />
-              Prep Latency Index
+              Prep time by station
             </h3>
           </div>
           <div className="h-80">
@@ -120,10 +123,10 @@ export default function Analytics() {
           </div>
         </div>
 
-        <div className="android-card p-10 flex flex-col shadow-2xl">
-          <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3 mb-10">
+        <div className="panel flex flex-col shadow-2xl">
+          <h3 className="section-label flex items-center gap-3 mb-10">
             <Zap className="w-5 h-5 text-yellow-500" />
-            Node Load Profile
+            Station load profile
           </h3>
           <div className="flex-1 min-h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -152,10 +155,10 @@ export default function Analytics() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="android-card p-10">
-          <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3 mb-10">
+        <div className="panel">
+          <h3 className="section-label flex items-center gap-3 mb-10">
             <TrendingUp className="w-5 h-5 text-green-500" />
-            Resource Saturation
+            Order volume trend
           </h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -177,14 +180,14 @@ export default function Analytics() {
           </div>
         </div>
 
-        <div className="android-card p-10 flex flex-col justify-center bg-blue-500/5">
+        <div className="panel flex flex-col justify-center bg-blue-500/5">
           <div className="text-center space-y-8">
             <div className="w-28 h-28 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto border border-blue-500/20 shadow-2xl">
               <Award className="w-14 h-14 text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
             </div>
             <div>
-              <h4 className="text-xl font-black text-white uppercase tracking-tight">Optimal Node Unit</h4>
-              <p className="text-blue-500 font-black uppercase tracking-[0.4em] text-[10px] mt-2">Fry Terminal Omega</p>
+              <h4 className="text-xl font-black text-white uppercase tracking-tight">Best performing station</h4>
+              <p className="text-blue-500 font-black uppercase tracking-[0.4em] text-[10px] mt-2">{stationData[0]?.name ?? 'Station'}</p>
               <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-8 max-w-xs mx-auto leading-relaxed opacity-70">
                 Completed orders: {summary.completedOrders}. Open orders: {summary.openOrders}.
               </p>

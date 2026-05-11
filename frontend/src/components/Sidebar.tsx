@@ -41,10 +41,10 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
         {filteredItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onViewChange(item.id)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-r-lg transition-all duration-200",
-              currentView === item.id 
+          onClick={() => onViewChange(item.id)}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-r-lg transition-all duration-200",
+            currentView === item.id 
                 ? "bg-blue-500/15 text-blue-400 border-l-4 border-blue-500" 
                 : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
             )}

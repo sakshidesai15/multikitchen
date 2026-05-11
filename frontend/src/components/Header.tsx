@@ -22,7 +22,7 @@ export default function Header({ onToggleKds }: HeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input 
             type="text" 
-            placeholder="Search terminal..." 
+            placeholder="Search orders, stations, or menu items..." 
             className="w-full bg-slate-950/50 border border-slate-800 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-300"
           />
         </div>
@@ -32,10 +32,10 @@ export default function Header({ onToggleKds }: HeaderProps) {
         <button 
           onClick={onToggleKds}
           className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-800 transition-all group"
-          title="KDS Full Screen"
+          title="Full screen"
         >
           <Maximize2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-          <span className="hidden lg:block">KDS Mode</span>
+          <span className="hidden lg:block">Full screen</span>
         </button>
 
         <div className="hidden sm:flex flex-col items-end mr-4">

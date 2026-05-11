@@ -73,25 +73,25 @@ export default function Dashboard() {
   ];
 
   if (loading) {
-     return <div className="p-8 text-slate-500 font-mono animate-pulse">Initializing Terminal...</div>;
+     return <div className="p-8 text-slate-500 font-mono animate-pulse">Loading dashboard...</div>;
   }
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight uppercase">Master Control</h2>
-          <p className="text-slate-500 text-sm font-medium">Global infrastructure terminal</p>
+          <h2 className="page-title">Kitchen overview</h2>
+          <p className="page-subtitle">Live station activity and order health at a glance.</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-1.5 glass rounded-full border border-slate-800 shadow-lg">
           <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Sync Online</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live sync online</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
-          <div key={i} className={cn("android-card p-6 flex items-center justify-between transition-all hover:scale-[1.02]", stat.border.replace('border-', 'border-l-4 border-'))}>
+          <div key={i} className={cn("panel flex items-center justify-between transition-all hover:scale-[1.01]", stat.border.replace('border-', 'border-l-4 border-'))}>
             <div>
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
               <h3 className="text-3xl font-black text-white mt-1">{stat.value}</h3>
@@ -106,20 +106,20 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between mb-2 px-2">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+            <h3 className="section-label flex items-center gap-2">
               <Activity className="w-4 h-4 text-blue-500" />
-              Node Infrastructure
+              Station health
             </h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {stations.map((station) => {
               const activeCount = station._count?.order_items || 0;
-              const loadPercentage = Math.min((activeCount / 10) * 100, 100);
+              const loadPercentage = Math.min((activeCount / Math.max(1, station.expected_time_minutes)) * 18, 100);
               const color = station.color_code;
 
               return (
-                <div key={station.station_id} className="android-card border-l-8 transition-all" style={{ borderLeftColor: color }}>
+                <div key={station.station_id} className="panel border-l-8 transition-all" style={{ borderLeftColor: color }}>
                   <div className="p-8">
                     <div className="flex justify-between items-start mb-6">
                       <div>
@@ -129,14 +129,14 @@ export default function Dashboard() {
                         <p className="text-[11px] text-slate-500 font-black uppercase mt-4 tracking-widest">{station.display_name}</p>
                       </div>
                       <div className="text-right">
-                         <div className="text-[10px] font-black text-slate-300 bg-white/5 px-3 py-1 rounded-full border border-white/5">{station.expected_time_minutes}m SLA</div>
+                        <div className="text-[10px] font-black text-slate-300 bg-white/5 px-3 py-1 rounded-full border border-white/5">{station.expected_time_minutes}m SLA</div>
                       </div>
                     </div>
                     
                     <div className="flex items-end justify-between mb-6">
                       <div>
                         <div className="text-5xl font-black text-white leading-none">{activeCount}</div>
-                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Active Node Links</div>
+                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Active items</div>
                       </div>
                       <div className="text-right">
                         <div className={`text-[10px] font-black uppercase tracking-widest ${loadPercentage > 80 ? 'text-red-400' : 'text-blue-400'}`}>
@@ -163,7 +163,7 @@ export default function Dashboard() {
             <Users className="w-4 h-4 text-green-500" />
             Personnel
           </h3>
-          <div className="android-card p-8 space-y-4">
+          <div className="panel space-y-4">
             {stations.map(station => (
               <div key={station.station_id} className="flex items-center justify-between p-4 rounded-3xl bg-white/5 border border-white/5">
                 <div className="flex items-center gap-4">
@@ -197,7 +197,7 @@ export default function Dashboard() {
               </div>
               <div className="flex gap-3 text-xs">
                 <div className="w-1 h-1 bg-orange-500 rounded-full mt-1.5 flex-shrink-0" />
-                <p className="text-slate-400">Station [Grill] reports high volume (85%)</p>
+                <p className="text-slate-400">Grill station is currently running above average load.</p>
               </div>
             </div>
           </div>

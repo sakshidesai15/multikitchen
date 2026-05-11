@@ -82,7 +82,10 @@ export default function OrderFlow() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight">Menu Items</h2>
+          <div>
+            <h2 className="page-title text-2xl md:text-3xl">Create order</h2>
+            <p className="page-subtitle">Select items and send a ticket to the kitchen.</p>
+          </div>
           <button onClick={() => window.location.reload()} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -92,31 +95,31 @@ export default function OrderFlow() {
             <button
               key={item.id}
               onClick={() => addToCart(item)}
-              className="android-card p-6 text-left hover:border-blue-500/50 transition-all group active:scale-[0.98]"
+              className="panel text-left hover:border-blue-500/50 transition-all group active:scale-[0.99]"
             >
-              <div className="flex justify-between items-start">
-                <h3 className="font-black text-white uppercase text-sm group-hover:text-blue-400 transition-colors tracking-tight">
+              <div className="flex justify-between items-start gap-4">
+                <h3 className="font-bold text-white text-sm group-hover:text-blue-400 transition-colors">
                   {item.name}
                 </h3>
-                <span className="text-[10px] font-black text-slate-500 px-2 py-0.5 bg-white/5 rounded-full border border-white/5">
+                <span className="text-[10px] font-black text-slate-400 px-2 py-0.5 bg-white/5 rounded-full border border-white/5 whitespace-nowrap">
                   {item.prep_time_minutes}m
                 </span>
               </div>
-              <p className="text-[10px] text-slate-600 mt-4 font-black uppercase tracking-[0.2em]">{item.category}</p>
+              <p className="text-[10px] text-slate-500 mt-4 font-black uppercase tracking-[0.2em]">{item.category}</p>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="flex flex-col android-card overflow-hidden h-full shadow-2xl">
+      <div className="flex flex-col panel overflow-hidden h-full shadow-2xl">
         <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/5">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-inner">
               <ShoppingCart className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-widest">Draft Queue</h3>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-tight">Pending Dispatch</p>
+              <h3 className="text-sm font-bold text-white uppercase tracking-widest">Draft order</h3>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-tight">Ready to send</p>
             </div>
           </div>
           <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
@@ -126,9 +129,9 @@ export default function OrderFlow() {
 
         <div className="flex-1 overflow-y-auto p-8 space-y-4">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-600">
+            <div className="empty-state">
               <Layers className="w-16 h-16 mb-6 opacity-10" />
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Queue Neutral</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">No items selected</p>
             </div>
           ) : (
             cart.map((entry) => (
@@ -140,13 +143,13 @@ export default function OrderFlow() {
                   <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center font-black text-blue-400 shadow-inner border border-white/5">
                     {entry.quantity}
                   </div>
-                  <div>
-                    <div className="text-xs font-black text-white uppercase tracking-wider">{entry.item.name}</div>
-                    <div className="text-[10px] text-slate-500 font-black uppercase tracking-tight">
-                      {entry.item.prep_time_minutes}m SECURE
+                      <div>
+                        <div className="text-xs font-black text-white uppercase tracking-wider">{entry.item.name}</div>
+                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-tight">
+                      Prep time {entry.item.prep_time_minutes}m
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
                 <button
                   onClick={() => removeFromCart(entry.item.id)}
                   className="p-3 hover:bg-red-500/10 text-slate-600 hover:text-red-500 rounded-2xl transition-colors active:scale-90"
@@ -171,8 +174,8 @@ export default function OrderFlow() {
           >
             {submitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : (
               <>
-                <Send className="w-5 h-5" />
-                Initialize Global Dispatch
+              <Send className="w-5 h-5" />
+                Send to kitchen
               </>
             )}
           </button>
