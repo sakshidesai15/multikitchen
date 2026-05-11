@@ -51,9 +51,10 @@ npm run db:push
 
 ## Vercel deployment
 
-- Deploy `frontend/` as one Vercel project.
-- Deploy `backend/` as a separate project or API service.
+- If you deploy the repo root to Vercel, it will use [vercel.json](./vercel.json) to build `frontend/` and serve the static app.
+- Deploy `backend/` as a separate project or API service. Do not deploy the current Express + Socket.IO backend as-is to Vercel.
 - Set `VITE_API_BASE_URL` and `VITE_SOCKET_URL` in the frontend project to your backend URL.
+- If you deploy `frontend/` as its own Vercel project, set the same env vars there and leave the backend on another host.
 
 ## Root helpers
 
