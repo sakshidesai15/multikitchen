@@ -530,6 +530,36 @@ app.get("/api/menu", async (_req, res) => {
   }
 });
 
+app.post("/api/menu", async (req, res) => {
+  const { name, category, price, prep_time_minutes, station_id } = req.body ?? {};
+
+  if (!name || !category || price === undefined || prep_time_minutes === undefined) {
+    return res.status(400).json({ error: "name, category, price, and prep_time_minutes are required" });
+  }
+
+  try {
+    const createdItem = await prisma.menuItem.create({
+      data: {
+        name: String(name).trim(),
+        category: String(category).trim(),
+        price: Number(price),
+        prep_time_minutes: Number(prep_time_minutes),
+        station_id: station_id || null,
+        is_active: true,
+      },
+      include: {
+        station: true,
+      },
+    });
+
+    io.emit("menu-updated", createdItem);
+    res.status(201).json(createdItem);
+  } catch (error) {
+    console.error("Failed to create menu item:", error);
+    res.status(500).json({ error: "Failed to create menu item" });
+  }
+});
+
 app.get("/api/active-items", async (_req, res) => {
   try {
     const items = await getActiveItems();
