@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Layers, X, Plus, Package2 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { apiUrl } from '../lib/api';
+import { assignDemoMenuStation, createDemoMenuItem, getDemoMenuItems, getDemoStations, subscribeDemoState } from '../lib/demoData';
 
 interface MenuItem {
   id: string;
@@ -36,12 +36,8 @@ export default function StationMapping() {
 
   const fetchData = async () => {
     try {
-      const [mRes, sRes] = await Promise.all([
-        fetch(apiUrl('/api/menu')),
-        fetch(apiUrl('/api/stations'))
-      ]);
-      const mData = await mRes.json();
-      const sData = await sRes.json();
+      const mData = getDemoMenuItems();
+      const sData = getDemoStations();
       setMenuItems(mData);
       setStations(sData);
       if (!productStationId && sData.length > 0) {
@@ -56,6 +52,7 @@ export default function StationMapping() {
 
   useEffect(() => {
     fetchData();
+    return subscribeDemoState(fetchData);
   }, []);
 
   const toggleSelect = (id: string) => {
@@ -64,13 +61,7 @@ export default function StationMapping() {
 
   const handleBulkAssign = async (stationId: string) => {
     try {
-      await Promise.all(selectedIds.map(id => 
-        fetch(apiUrl(`/api/menu/${id}/station`), {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ station_id: stationId })
-        })
-      ));
+      await assignDemoMenuStation(selectedIds, stationId);
       setSelectedIds([]);
       setIsModalOpen(false);
       fetchData();
@@ -88,21 +79,13 @@ export default function StationMapping() {
     setCreating(true);
     setStatusMessage('');
     try {
-      const response = await fetch(apiUrl('/api/menu'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: productName.trim(),
-          category: productCategory.trim(),
-          price: Number(productPrice),
-          prep_time_minutes: Number(productPrepTime),
-          station_id: productStationId || null,
-        }),
+      await createDemoMenuItem({
+        name: productName.trim(),
+        category: productCategory.trim(),
+        price: Number(productPrice),
+        prep_time_minutes: Number(productPrepTime),
+        station_id: productStationId || null,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create product');
-      }
 
       setProductName('');
       setProductCategory('Mains');

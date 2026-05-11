@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Clock, CheckCircle2, Play, Check, AlertCircle, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
-import socket from '../lib/socket';
-import { apiUrl } from '../lib/api';
+import { getDemoActiveItems, getDemoStations, subscribeDemoState, updateDemoItemStatus } from '../lib/demoData';
 
 interface Station {
   station_id: string;
@@ -35,16 +34,12 @@ export default function ChefView() {
 
   const fetchData = async () => {
     try {
-      const [iRes, sRes] = await Promise.all([
-        fetch(apiUrl('/api/active-items')),
-        fetch(apiUrl('/api/stations'))
-      ]);
-      const iData = await iRes.json();
-      const sData = await sRes.json();
-      setItems(iData);
-      setStations(sData);
-      if (!selectedStation && sData.length > 0) {
-        setSelectedStation(sData[0].station_id);
+      const activeItems = getDemoActiveItems();
+      const stationData = getDemoStations();
+      setItems(activeItems);
+      setStations(stationData);
+      if (!selectedStation && stationData.length > 0) {
+        setSelectedStation(stationData[0].station_id);
       }
     } catch (err) {
       console.error(err);
@@ -55,22 +50,12 @@ export default function ChefView() {
 
   useEffect(() => {
     fetchData();
-    socket.on('new-item', fetchData);
-    socket.on('item-updated', fetchData);
-
-    return () => {
-      socket.off('new-item');
-      socket.off('item-updated');
-    };
+    return subscribeDemoState(fetchData);
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      await fetch(apiUrl(`/api/items/${id}/status`), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, chef_id: user?.uid })
-      });
+      await updateDemoItemStatus(id, status as any);
     } catch (err) {
       console.error(err);
     }

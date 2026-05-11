@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Send, ShoppingCart, RefreshCw, Layers } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { apiUrl } from '../lib/api';
+import { createDemoOrder, getDemoMenuItems, subscribeDemoState } from '../lib/demoData';
 
 interface MenuItem {
   id: string;
@@ -17,13 +17,12 @@ export default function OrderFlow() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch(apiUrl('/api/menu'))
-      .then((res) => res.json())
-      .then((data) => {
-        setMenu(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    const load = () => {
+      setMenu(getDemoMenuItems());
+      setLoading(false);
+    };
+    load();
+    return subscribeDemoState(load);
   }, []);
 
   const addToCart = (item: MenuItem) => {
@@ -52,23 +51,16 @@ export default function OrderFlow() {
     if (cart.length === 0) return;
     setSubmitting(true);
     try {
-      const resp = await fetch(apiUrl('/api/orders'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tableNo: `T-${Math.floor(Math.random() * 24) + 1}`,
-          items: cart.map((entry) => ({
-            menu_item_id: entry.item.id,
-            quantity: entry.quantity,
-            notes: entry.quantity > 1 ? `Batch of ${entry.quantity}` : 'Standard prep',
-          })),
-        }),
-      });
-
-      if (resp.ok) {
-        setCart([]);
-        alert('Order sent to kitchen!');
-      }
+      await createDemoOrder(
+        `T-${Math.floor(Math.random() * 24) + 1}`,
+        cart.map((entry) => ({
+          menu_item_id: entry.item.id,
+          quantity: entry.quantity,
+          notes: entry.quantity > 1 ? `Batch of ${entry.quantity}` : 'Standard prep',
+        })),
+      );
+      setCart([]);
+      alert('Order sent to kitchen!');
     } catch (error) {
       console.error('Failed to submit order:', error);
     } finally {

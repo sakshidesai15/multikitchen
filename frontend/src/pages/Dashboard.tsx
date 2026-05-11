@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Flame, Clock, CheckCircle2, AlertCircle, Activity, LayoutGrid, Users } from 'lucide-react';
 import { cn } from '../lib/utils';
-import socket from '../lib/socket';
-import { apiUrl } from '../lib/api';
+import { getDemoActiveItems, getDemoStations, subscribeDemoState } from '../lib/demoData';
 
 interface Station {
   station_id: string;
@@ -30,14 +29,8 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [sRes, iRes] = await Promise.all([
-        fetch(apiUrl('/api/stations')),
-        fetch(apiUrl('/api/active-items'))
-      ]);
-      const sData = await sRes.json();
-      const iData = await iRes.json();
-      setStations(sData);
-      setActiveItems(iData);
+      setStations(getDemoStations());
+      setActiveItems(getDemoActiveItems());
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
     } finally {
@@ -47,16 +40,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
-
-    socket.on('new-item', fetchData);
-    socket.on('item-updated', fetchData);
-    socket.on('order-created', fetchData);
-
-    return () => {
-      socket.off('new-item');
-      socket.off('item-updated');
-      socket.off('order-created');
-    };
+    return subscribeDemoState(fetchData);
   }, []);
 
   const delayedItems = activeItems.filter(item => {

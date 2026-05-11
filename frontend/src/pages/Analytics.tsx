@@ -14,7 +14,7 @@ import {
   Pie,
 } from 'recharts';
 import { TrendingUp, Clock, Award, Zap } from 'lucide-react';
-import { apiUrl } from '../lib/api';
+import { getDemoStations, getDemoSummary, subscribeDemoState } from '../lib/demoData';
 
 interface Station {
   station_id: string;
@@ -38,15 +38,14 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch(apiUrl('/api/stations')).then((res) => res.json()),
-      fetch(apiUrl('/api/analytics/summary')).then((res) => res.json()),
-    ])
-      .then(([stationData, summaryData]) => {
-        setStations(stationData);
-        setSummary(summaryData);
-      })
-      .finally(() => setLoading(false));
+    const load = () => {
+      setStations(getDemoStations());
+      setSummary(getDemoSummary());
+      setLoading(false);
+    };
+
+    load();
+    return subscribeDemoState(load);
   }, []);
 
   const stationData = useMemo(() => stations.map((station, index) => ({
