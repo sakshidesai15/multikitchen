@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "KitchenStation": {
+      "title": "Kitchen Station",
+      "description": "Represents a specific area in the kitchen (e.g., Fry, Curry)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "color": { "type": "string" },
+        "activeItemsCount": { "type": "number" },
+        "avgPrepTime": { "type": "number" },
+        "delayWarning": { "type": "boolean" }
+      },
+      "required": ["name", "color"]
+    },
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A food or beverage item that can be ordered",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "stationId": { "type": "string" }
+      },
+      "required": ["name", "category", "price"]
+    },
+    "Order": {
+      "title": "Restaurant Order",
+      "description": "A customer's full order containing multiple items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tableNo": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "enum": ["active", "ready", "served"] },
+        "totalItems": { "type": "number" },
+        "completedItems": { "type": "number" }
+      },
+      "required": ["tableNo", "createdAt", "status"]
+    },
+    "OrderItem": {
+      "title": "Order Item Instance",
+      "description": "A specific item within an order, directed to a station",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "tableNo": { "type": "string" },
+        "itemId": { "type": "string" },
+        "name": { "type": "string" },
+        "stationId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "notes": { "type": "string" },
+        "priority": { "enum": ["low", "medium", "high"] },
+        "status": { "enum": ["pending", "cooking", "ready"] },
+        "assignedChefId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "readyTime": { "type": "string", "format": "date-time" },
+        "expectedPrepTime": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orderId", "name", "stationId", "quantity", "status", "createdAt"]
+    },
+    "User": {
+      "title": "Staff User",
+      "description": "A chef, admin, or waiter",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "enum": ["admin", "chef", "waiter", "supervisor"] },
+        "stationId": { "type": "string" },
+        "pin": { "type": "string" }
+      },
+      "required": ["uid", "name", "role"]
+    }
+  },
+  "firestore": {
+    "/kitchen_stations/{stationId}": {
+      "schema": "KitchenStation",
+      "description": "Definitions of kitchen stations"
+    },
+    "/menu_items/{itemId}": {
+      "schema": "MenuItem",
+      "description": "List of available food and drinks"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Track the lifecycle of customer orders"
+    },
+    "/order_items/{orderItemId}": {
+      "schema": "OrderItem",
+      "description": "Individual items that chefs interact with"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Staff profiles and roles"
+    }
+  }
+}

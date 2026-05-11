@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model KitchenStation {
+  station_id             String   @id @default(uuid())
+  restaurant_id          String?
+  station_name           String
+  display_name           String
+  station_code          String   @unique
+  color_code             String
+  icon                   String?
+  priority               Int      @default(0)
+  expected_time_minutes  Int      @default(10)
+  max_parallel_capacity Int      @default(5)
+  auto_accept_orders    Boolean  @default(true)
+  allow_manual_assignment Boolean @default(true)
+  sound_alert_enabled    Boolean  @default(true)
+  printer_enabled        Boolean  @default(false)
+  sort_order             Int      @default(0)
+  is_active              Boolean  @default(true)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  chef_mappings          ChefStationMapping[]
+  order_items            OrderItemStation[]
+  activity_logs          ChefActivityLog[]
+  performance_logs       StationPerformance[]
+  queue                  StationQueue[]
+  alerts                 KitchenAlert[]
+  menu_items             MenuItem[]
+}
+
+model Order {
+  id             String   @id @default(uuid())
+  order_number    String   @unique
+  table_no        String?
+  status          String   @default("OPEN")
+  total_items     Int      @default(0)
+  completed_items  Int      @default(0)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  order_items     OrderItemStation[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  uid       String   @unique
+  name      String
+  role      String
+  pin       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
+  chef_mappings ChefStationMapping[]
+  activity_logs ChefActivityLog[]
+}
+
+model ChefStationMapping {
+  mapping_id            String   @id @default(uuid())
+  chef_id               String
+  chef                  User     @relation(fields: [chef_id], references: [id])
+  station_id            String
+  station               KitchenStation @relation(fields: [station_id], references: [station_id])
+  role                  String   @default("CHEF")
+  shift_start           String?
+  shift_end             String?
+  is_primary            Boolean  @default(false)
+  skill_level           Int      @default(1)
+  max_order_load        Int      @default(5)
+  current_active_orders Int      @default(0)
+  auto_assign_enabled   Boolean  @default(true)
+  status                String   @default("offline")
+  last_seen_at          DateTime?
+  created_at             DateTime @default(now())
+
+  @@unique([chef_id, station_id])
+}
+
+model MenuItem {
+  id               String   @id @default(uuid())
+  name             String
+  category         String
+  price            Float
+  station_id       String?
+  station          KitchenStation? @relation(fields: [station_id], references: [station_id])
+  prep_time_minutes Int      @default(10)
+  is_active        Boolean  @default(true)
+}
+
+model OrderItemStation {
+  id                         String   @id @default(uuid())
+  order_id                   String
+  order_record_id            String?
+  order                      Order?   @relation(fields: [order_record_id], references: [id], onDelete: Cascade)
+  order_item_id              String
+  station_id                 String
+  station                    KitchenStation @relation(fields: [station_id], references: [station_id])
+  chef_id                    String?
+  status                     String   @default("PENDING") // PENDING, ACCEPTED, STARTED, READY, SERVED
+  priority                   Int      @default(2)
+  quantity                   Int      @default(1)
+  started_at                 DateTime?
+  accepted_at                DateTime?
+  ready_at                   DateTime?
+  served_at                  DateTime?
+  expected_ready_time        DateTime?
+  actual_preparation_seconds Int?
+  delay_reason               String?
+  notes                      String?
+  timer_started              Boolean  @default(false)
+  escalated                  Boolean  @default(false)
+  created_at                 DateTime @default(now())
+  
+  activity_logs              ChefActivityLog[]
+  queue_entry                StationQueue?
+}
+
+model ChefActivityLog {
+  log_id         String   @id @default(uuid())
+  chef_id        String
+  chef           User     @relation(fields: [chef_id], references: [id])
+  station_id     String
+  station        KitchenStation @relation(fields: [station_id], references: [station_id])
+  order_item_id  String
+  order_item     OrderItemStation @relation(fields: [order_item_id], references: [id])
+  action_type    String
+  old_status     String?
+  new_status     String
+  action_time    DateTime @default(now())
+  device_id      String?
+  notes          String?
+  ip_address     String?
+  session_id     String?
+}
+
+model StationPerformance {
+  id                       String   @id @default(uuid())
+  station_id               String
+  station                  KitchenStation @relation(fields: [station_id], references: [station_id])
+  date                     DateTime @default(now())
+  total_orders             Int      @default(0)
+  avg_preparation_time     Float    @default(0)
+  max_preparation_time     Float    @default(0)
+  delayed_orders           Int      @default(0)
+  completed_orders         Int      @default(0)
+  cancelled_orders         Int      @default(0)
+  utilization_percentage   Float    @default(0)
+  peak_hour                String?
+  avg_queue_length         Float    @default(0)
+  chef_efficiency_score    Float    @default(0)
+  generated_at             DateTime @default(now())
+}
+
+model StationQueue {
+  queue_id       String   @id @default(uuid())
+  station_id     String
+  station        KitchenStation @relation(fields: [station_id], references: [station_id])
+  order_item_id  String   @unique
+  order_item     OrderItemStation @relation(fields: [order_item_id], references: [id])
+  queue_position Int
+  queued_at      DateTime @default(now())
+  started_at     DateTime?
+  status         String   @default("QUEUED")
+}
+
+model KitchenAlert {
+  alert_id    String   @id @default(uuid())
+  station_id  String
+  station     KitchenStation @relation(fields: [station_id], references: [station_id])
+  alert_type  String
+  severity    String
+  message     String
+  triggered_at DateTime @default(now())
+  resolved_at  DateTime?
+}

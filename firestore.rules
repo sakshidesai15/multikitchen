@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      // For simplicity in this demo, we check if the user role is admin in the users collection
+      // In a real app, this should be a more secure check (e.g. custom claims or separate admin collection)
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isChef() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'chef';
+    }
+
+    function isSupervisor() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'supervisor';
+    }
+
+    // --- Validations ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'role']) 
+             && data.uid is string 
+             && data.name is string && data.name.size() <= 100
+             && data.role in ['admin', 'chef', 'waiter', 'supervisor'];
+    }
+
+    function isValidStation(data) {
+      return data.keys().hasAll(['name', 'color'])
+             && data.name is string && data.name.size() <= 50
+             && data.color is string && data.color.size() <= 20;
+    }
+
+    function isValidMenuItem(data) {
+      return data.keys().hasAll(['name', 'category', 'price'])
+             && data.name is string && data.name.size() <= 200
+             && data.category is string
+             && data.price is number;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['tableNo', 'createdAt', 'status'])
+             && data.tableNo is string
+             && data.status in ['active', 'ready', 'served'];
+    }
+
+    function isValidOrderItem(data) {
+      return data.keys().hasAll(['orderId', 'name', 'stationId', 'quantity', 'status', 'createdAt'])
+             && data.orderId is string
+             && data.name is string
+             && data.stationId is string
+             && data.quantity is number
+             && data.status in ['pending', 'cooking', 'ready'];
+    }
+
+    // --- Match Rules ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn(); // Staff can see each other
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidUser(incoming()) && incoming().uid == request.auth.uid;
+      allow update: if isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'stationId', 'pin']);
+      allow delete: if isAdmin();
+    }
+
+    match /kitchen_stations/{stationId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin() && isValidStation(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /menu_items/{itemId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin() && isValidMenuItem(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn();
+      allow create: if (isAdmin() || isSupervisor() || isChef()) && isValidOrder(incoming());
+      allow update: if isSignedIn() && isValidOrder(incoming()); // Any staff can update status/totals
+      allow delete: if isAdmin();
+    }
+
+    match /order_items/{orderItemId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidOrderItem(incoming());
+      allow update: if isSignedIn() && (
+        // Validation wrapper
+        isValidOrderItem(incoming()) && (
+          // Logic: Chef starts cooking
+          (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'startTime', 'assignedChefId']) && incoming().status == 'cooking') ||
+          // Logic: Chef completes cooking
+          (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'readyTime']) && incoming().status == 'ready') ||
+          // Logic: Admin edits notes or priority
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['notes', 'priority', 'stationId'])) ||
+          // Logic: Status reversion (unlikely but allowed for admins)
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status']))
+        )
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}
