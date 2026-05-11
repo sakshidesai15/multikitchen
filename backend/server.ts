@@ -130,9 +130,135 @@ async function seedMenuItemsIfNeeded(stations: Awaited<ReturnType<typeof prisma.
   console.log("Seeded demo menu items");
 }
 
+async function seedDemoOrdersIfNeeded(stations: Awaited<ReturnType<typeof prisma.kitchenStation.findMany>>) {
+  const activeCount = await prisma.orderItemStation.count();
+  if (activeCount > 0) {
+    return;
+  }
+
+  const menuItems = await prisma.menuItem.findMany({
+    where: {
+      name: {
+        in: [
+          "French Fries",
+          "Cheeseburger",
+          "Chicken Nuggets",
+          "Caesar Salad",
+          "Grilled Steak",
+          "Club Sandwich",
+          "Mozzarella Sticks",
+          "Iced Lemon Tea",
+          "Margherita Pizza Slice",
+          "Chocolate Cake",
+        ],
+      },
+    },
+  });
+
+  const menuMap = new Map(menuItems.map((item) => [item.name, item]));
+  const fallbackStation = stations[0];
+  const fryStation = stations.find((station) => station.station_name.toLowerCase().includes("fry")) ?? fallbackStation;
+  const grillStation = stations.find((station) => station.station_name.toLowerCase().includes("grill")) ?? fallbackStation;
+  const coldStation = stations.find((station) => station.station_name.toLowerCase().includes("cold")) ?? fallbackStation;
+
+  if (!fallbackStation || menuItems.length === 0) {
+    return;
+  }
+
+  const orderA = await prisma.order.create({
+    data: {
+      order_number: makeOrderNumber(),
+      table_no: "T-12",
+      status: "OPEN",
+      total_items: 3,
+      completed_items: 0,
+    },
+  });
+
+  const orderB = await prisma.order.create({
+    data: {
+      order_number: makeOrderNumber(),
+      table_no: "T-7",
+      status: "IN_PROGRESS",
+      total_items: 2,
+      completed_items: 1,
+    },
+  });
+
+  const now = Date.now();
+  await prisma.orderItemStation.createMany({
+    data: [
+      {
+        order_id: orderA.order_number,
+        order_record_id: orderA.id,
+        order_item_id: menuMap.get("Cheeseburger")?.name ?? "Cheeseburger",
+        station_id: menuMap.get("Cheeseburger")?.station_id ?? grillStation?.station_id ?? fallbackStation.station_id,
+        quantity: 2,
+        notes: "No onions",
+        status: "PENDING",
+        expected_ready_time: new Date(now + 12 * 60000),
+      },
+      {
+        order_id: orderA.order_number,
+        order_record_id: orderA.id,
+        order_item_id: menuMap.get("French Fries")?.name ?? "French Fries",
+        station_id: menuMap.get("French Fries")?.station_id ?? fryStation?.station_id ?? fallbackStation.station_id,
+        quantity: 1,
+        status: "STARTED",
+        started_at: new Date(now - 4 * 60000),
+        expected_ready_time: new Date(now + 6 * 60000),
+      },
+      {
+        order_id: orderA.order_number,
+        order_record_id: orderA.id,
+        order_item_id: menuMap.get("Caesar Salad")?.name ?? "Caesar Salad",
+        station_id: menuMap.get("Caesar Salad")?.station_id ?? coldStation?.station_id ?? fallbackStation.station_id,
+        quantity: 1,
+        status: "READY",
+        started_at: new Date(now - 9 * 60000),
+        ready_at: new Date(now - 1 * 60000),
+        expected_ready_time: new Date(now - 2 * 60000),
+      },
+      {
+        order_id: orderB.order_number,
+        order_record_id: orderB.id,
+        order_item_id: menuMap.get("Grilled Steak")?.name ?? "Grilled Steak",
+        station_id: menuMap.get("Grilled Steak")?.station_id ?? grillStation?.station_id ?? fallbackStation.station_id,
+        quantity: 1,
+        status: "ACCEPTED",
+        accepted_at: new Date(now - 3 * 60000),
+        expected_ready_time: new Date(now + 17 * 60000),
+      },
+      {
+        order_id: orderB.order_number,
+        order_record_id: orderB.id,
+        order_item_id: menuMap.get("Chocolate Cake")?.name ?? "Chocolate Cake",
+        station_id: menuMap.get("Chocolate Cake")?.station_id ?? coldStation?.station_id ?? fallbackStation.station_id,
+        quantity: 2,
+        status: "PENDING",
+        notes: "Extra cream",
+        expected_ready_time: new Date(now + 4 * 60000),
+      },
+    ],
+  });
+
+  await prisma.order.update({
+    where: { id: orderA.id },
+    data: { total_items: 3, completed_items: 1, status: "IN_PROGRESS" },
+  });
+
+  await prisma.order.update({
+    where: { id: orderB.id },
+    data: { total_items: 2, completed_items: 0, status: "OPEN" },
+  });
+
+  console.log("Seeded demo orders and active kitchen tickets");
+}
+
 async function seedData() {
   const stations = await seedStationsIfNeeded();
   await seedMenuItemsIfNeeded(stations);
+  await seedDemoOrdersIfNeeded(stations);
 }
 
 async function getStationOverview() {
